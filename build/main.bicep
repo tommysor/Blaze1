@@ -3,7 +3,7 @@ param containerImage string
 param revisionSuffix string
 
 var rgUniqueString = uniqueString(resourceGroup().id)
-var appName = 'someapi2'
+var appName = 'blaze1'
 
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
   name: 'log-ws-${rgUniqueString}'

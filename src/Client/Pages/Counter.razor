@@ -1,4 +1,7 @@
 ﻿@page "/counter"
+@implements IAsyncDisposable
+@inject NavigationManager navigationManager
+@inject HttpClient httpClient
 
 <PageTitle>Counter</PageTitle>
 
@@ -10,9 +13,40 @@
 
 @code {
     private int currentCount = 0;
+    private readonly CancellationTokenSource cancellationTokenSource = new();
+    private HubConnection? hubConnection;
 
-    private void IncrementCount()
+    protected override async Task OnInitializedAsync()
+        {
+            currentCount = await httpClient.GetFromJsonAsync<int>("count");
+
+            hubConnection = new HubConnectionBuilder()
+                .WithUrl(navigationManager.ToAbsoluteUri("/CountHub"))
+                .WithAutomaticReconnect()
+                .Build();
+            
+            hubConnection.On<int>("UpdatedCount", async count =>
+                {
+                    currentCount = count;
+                    await InvokeAsync(() => StateHasChanged());
+                });
+            
+            await hubConnection.StartAsync(cancellationTokenSource.Token);
+        }    
+
+    private async Task IncrementCount()
     {
-        currentCount++;
+        await httpClient.PostAsJsonAsync("count", "increment");
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        cancellationTokenSource.Cancel();
+        cancellationTokenSource.Dispose();
+
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
     }
 }

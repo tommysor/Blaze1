@@ -1,3 +1,5 @@
+using blaze1.Server.Data;
+using blaze1.Server.Hubs;
 using Microsoft.AspNetCore.ResponseCompression;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -6,6 +8,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
+builder.Services.AddSignalR();
+
+builder.Services.AddSingleton<CountRepository>();
+builder.Services.AddHostedService<CountIncrementerService>();
 
 var app = builder.Build();
 
@@ -27,6 +33,7 @@ app.UseRouting();
 
 app.MapRazorPages();
 app.MapControllers();
+app.MapHub<CountHub>("/CountHub");
 app.MapFallbackToFile("index.html");
 
 app.Run();
